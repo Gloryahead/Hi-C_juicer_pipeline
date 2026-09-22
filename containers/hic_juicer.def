@@ -1,0 +1,66 @@
+Bootstrap: docker
+From: mambaorg/micromamba:1.5.8
+
+# hic_juicer.sif — Hi-C QC/trim/alignment + full Juicer CPU pipeline toolchain
+# Covers: fastqc, trim-galore, bwa, samtools, sra-tools, gawk, parallel, openjdk
+#         + Juicer itself (scripts/common) + juicer_tools.jar, baked in at
+#         build time so a run never depends on GitHub/S3 being reachable
+#         from a compute node.
+# Pinned versions (see docs/KEY_CONCEPTS.md for why each is pinned):
+#   aidenlab/juicer  @ 177eb610397e4207fc56db1df169b2d08d06d43a  (main, 2025-08-31)
+#   juicer_tools     2.17.00  (github.com/aidenlab/Juicebox releases)
+# Build: apptainer build containers/hic_juicer.sif containers/hic_juicer.def
+# Snakemake usage: container: "file://containers/hic_juicer.sif"
+
+%labels
+    Author        NGS101-pipeline
+    Version       1.0.0
+    CondaYAML     environments/01_hic_juicer.yml
+    JuicerCommit  177eb610397e4207fc56db1df169b2d08d06d43a
+    JuicerToolsJar 2.17.00
+
+%files
+    environments/01_hic_juicer.yml /opt/hic_juicer.yml
+
+%post
+    set -euo pipefail
+
+    micromamba install -y -n base -f /opt/hic_juicer.yml && \
+    micromamba clean --all --yes
+
+    # ── Bake in Juicer itself, pinned to an exact commit (aidenlab tags rarely,
+    # so a commit SHA is the only reproducible reference — see def header) ──
+    JUICER_COMMIT=177eb610397e4207fc56db1df169b2d08d06d43a
+    JUICER_TOOLS_VERSION=2.17.00
+
+    micromamba run -n base git clone https://github.com/aidenlab/juicer.git /opt/juicer
+    cd /opt/juicer
+    micromamba run -n base git checkout "${JUICER_COMMIT}"
+
+    mkdir -p scripts/common
+    cp CPU/*.* scripts/common/
+    cp CPU/common/* scripts/common/
+    chmod +x scripts/common/*.sh
+
+    micromamba run -n base wget -q \
+        "https://github.com/aidenlab/Juicebox/releases/download/v${JUICER_TOOLS_VERSION}/juicer_tools_${JUICER_TOOLS_VERSION}.jar" \
+        -O scripts/common/juicer_tools.jar
+
+    # Record installed versions for provenance
+    micromamba run -n base bwa 2>&1 | head -3 > /opt/versions.txt || true
+    micromamba run -n base samtools --version | head -1 >> /opt/versions.txt
+    micromamba run -n base fastqc --version >> /opt/versions.txt
+    micromamba run -n base trim_galore --version | grep version >> /opt/versions.txt
+    micromamba run -n base java -version >> /opt/versions.txt 2>&1
+    echo "juicer_commit=${JUICER_COMMIT}" >> /opt/versions.txt
+    echo "juicer_tools_version=${JUICER_TOOLS_VERSION}" >> /opt/versions.txt
+
+%environment
+    export PATH=/opt/conda/bin:/opt/juicer/scripts/common:$PATH
+    export CONDA_DEFAULT_ENV=base
+    export JUICER_DIR=/opt/juicer
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%runscript
+    exec "$@"

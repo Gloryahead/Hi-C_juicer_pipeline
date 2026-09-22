@@ -1,0 +1,13 @@
+# ngs101.com Hi-C tutorial ("How to Analyze Hi-C Data for Absolute Beginners")
+# sample sheet. The tutorial itself names exactly one worked example —
+# SRR1658570 — so that is the only row that ships pre-filled. Add more rows
+# for biological replicates: IDR filtering of loops (docs/KEY_CONCEPTS.md)
+# needs >=2 replicates per condition to be meaningful, which the tutorial's
+# single-sample walkthrough does not demonstrate.
+#
+# restriction_enzyme overrides config.yaml's genome.restriction_enzyme default
+# per-sample (leave blank to use the default). fastq_r1/fastq_r2 are left
+# blank here — scripts/01_download_test_data.sh populates them for SRR1658570;
+# bring your own FASTQs (or SRA accession) for any additional rows.
+sample	sra_accession	restriction_enzyme	fastq_r1	fastq_r2
+hic1	SRR1658570

@@ -1,0 +1,40 @@
+# Reference genome + Juicer install (large; rebuilt with scripts/00-02)
+ref/
+tools/
+*.fa
+*.fasta
+*.fa.fai
+*.fa.bwt
+*.fa.ann
+*.fa.amb
+*.fa.pac
+*.fa.sa
+*.chrom.sizes
+*_MboI.txt
+*_HindIII.txt
+
+# Raw and intermediate data (lives on xdisk, not in git)
+data/fastq/
+results/
+logs/
+
+# Apptainer/Singularity images (rebuild from .def with containers/build_all_sifs.sh)
+*.sif
+
+# Snakemake bookkeeping
+.snakemake/
+runs/*.tsv.lock
+
+# Nextflow bookkeeping
+.nextflow/
+.nextflow.log*
+work/
+
+# Conda/micromamba
+*.conda
+__pycache__/
+*.pyc
+
+# OS/editor cruft
+.DS_Store
+*.swp

@@ -1,0 +1,3 @@
+# Run tracking — append one row per pipeline invocation you care to keep a
+# record of. Not auto-populated; update it yourself after a run completes.
+run_id	date	config_snapshot	git_commit	notes

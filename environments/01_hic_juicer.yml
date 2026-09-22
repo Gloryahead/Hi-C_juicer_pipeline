@@ -1,0 +1,25 @@
+# Core Hi-C toolchain: QC/trim + alignment + Juicer's own contact-map/TAD/loop
+# tools (all invoked via juicer_tools.jar, so only a JVM is needed for those —
+# no separate peak-caller/eigenvector package). One container, mirroring how
+# containers/wgs_core.def bundles QC+align+calling for the WGS pipeline: the
+# whole chain from FASTQ to inter_30.hic is one dependency graph internal to
+# Juicer, so it isn't worth splitting into narrower per-tool containers.
+# Build: micromamba env create -f environments/01_hic_juicer.yml --yes
+name: hic_juicer_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - openjdk=17                  # juicer_tools.jar (HiCCUPS/Arrowhead/dump/eigenvector) needs a modern JVM; 17 validated against juicer_tools 2.17.00
+  - bwa=0.7.17                  # tutorial uses classic BWA-MEM, not bwa-mem2 — Juicer's own scripts assume classic bwa's exact stderr/index-file format
+  - samtools=1.23
+  - sra-tools=2.9.6             # fasterq-dump for the tutorial's SRR1658570 test dataset — pinned to the version validated in the sibling WGS pipeline's download path
+  - fastqc=0.12.*
+  - trim-galore=0.6.*
+  - multiqc=1.22.*
+  - gawk                        # juicer.sh's internal scripts are gawk-specific (not POSIX awk) — required, not optional
+  - parallel=20240722            # GNU parallel — juicer.sh's chunked alignment stage
+  - htslib=1.20                  # tabix/bgzip, used by a few juicer helper scripts
+  - git                          # scripts/02_setup_juicer.sh clones aidenlab/juicer at build time
+  - wget

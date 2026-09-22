@@ -1,0 +1,13 @@
+# Controller environment — only Snakemake itself + the SLURM executor plugin.
+# Same env name/spec as the sibling WGS_variant_pipeline / RNA-seq_pipeline repos —
+# reuses the existing snakemake_env under this HPC's shared MAMBA_ROOT_PREFIX if present.
+# Build: micromamba env create -f environments/00_snakemake.yml --yes
+name: snakemake_env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - snakemake=8.20.*
+  - snakemake-executor-plugin-slurm=0.11.*
+  - pandas=2.2.*

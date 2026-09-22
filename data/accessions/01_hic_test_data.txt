@@ -1,0 +1,17 @@
+# Hi-C tutorial (ngs101.com) worked-example dataset — verified via ENA/SRA browser.
+#
+# SRR1658570
+#   = GEO GSM1551550, sample "HIC001"
+#   = GEO series GSE63525 / ArrayExpress E-GEOD-63525
+#   = Rao SS, Huntley MH, Durand NC, et al. "A 3D Map of the Human Genome at
+#     Kilobase Resolution Reveals Principles of Chromatin Looping."
+#     Cell. 2014;159(7):1665-1680.
+#   Organism: Homo sapiens (GM12878, in situ Hi-C, MboI digestion)
+#   Paired-end, Illumina HiSeq 2000
+#   ~202M read pairs (~40 Gb) — this is a full biological replicate at
+#   real sequencing depth, not a toy subsample: it comfortably clears this
+#   pipeline's own "high-resolution" QC benchmark (100-500M valid pairs;
+#   see config.yaml's qc_benchmarks), so expect real Juicer runtimes/memory
+#   (workflow/rules/02_juicer_core.smk's resource comments), not a quick demo.
+#
+# scripts/03_download_test_data.sh downloads it via sra-tools prefetch + fasterq-dump.

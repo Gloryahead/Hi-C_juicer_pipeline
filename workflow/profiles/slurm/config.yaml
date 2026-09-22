@@ -1,0 +1,24 @@
+# Snakemake SLURM executor profile
+# Works with snakemake >= 8.x and snakemake-executor-plugin-slurm.
+# Place this file at workflow/profiles/slurm/config.yaml
+# Use with: snakemake --profile workflow/profiles/slurm
+
+# ── Execution ─────────────────────────────────────────────────────────
+executor: slurm
+jobs: 100                        # max concurrent SLURM jobs
+latency-wait: 60                 # seconds to wait for output files after job ends (xdisk NFS lag)
+rerun-incomplete: true
+keep-going: true
+restart-times: 2                 # auto-retry failed jobs twice (transient HPC I/O errors)
+
+# ── Default SLURM resources (overridden per rule in rules/*.smk) ──────
+default-resources:
+  slurm_partition: "standard"
+  slurm_account: "haining"
+  mem_mb: 8000
+  runtime: 60                    # minutes
+  cpus_per_task: 4
+
+# ── Output ────────────────────────────────────────────────────────────
+printshellcmds: true
+show-failed-logs: true

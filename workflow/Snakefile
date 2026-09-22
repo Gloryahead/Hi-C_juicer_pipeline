@@ -1,0 +1,96 @@
+"""
+NGS101 Hi-C (Juicer) Pipeline — Snakemake entry point
+Covers: ngs101.com "How to Analyze Hi-C Data for Absolute Beginners: From Raw
+Reads to 3D Genome Organization with Juicer".
+
+Each rule runs inside a pre-built micromamba environment (or Apptainer SIF, if
+use_singularity: true in config); Snakemake submits each rule as a separate
+SLURM job via the executor plugin.
+
+Prerequisites:
+    micromamba env create -f environments/00_snakemake.yml --yes
+
+Usage:
+    micromamba activate snakemake_env
+
+    # Dry run — show what would run without submitting jobs:
+    snakemake -n --profile workflow/profiles/slurm
+
+    # Submit all jobs to SLURM:
+    snakemake --profile workflow/profiles/slurm
+
+    # Resume after failure (Snakemake auto-detects completed outputs):
+    snakemake --profile workflow/profiles/slurm
+
+    # Run only through the core .hic file (skip TADs/loops/compartments):
+    snakemake --profile workflow/profiles/slurm results/hic1/aligned/inter_30.hic
+
+    # Force re-run of a specific rule:
+    snakemake --profile workflow/profiles/slurm --forcerun juicer_pipeline
+
+    # Generate pipeline DAG:
+    snakemake --dag | dot -Tpdf > dag.pdf
+"""
+
+import re
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+# ── micromamba activation helper (see sibling WGS_variant_pipeline repo for
+# why the shell hook must be eval'd before `activate` in a non-interactive
+# SLURM shell) ──────────────────────────────────────────────────────────
+_MAMBA_EXE  = "/opt/ohpc/pub/apps/micromamba/2.0.2-2/bin/micromamba"
+_MAMBA_ROOT = "/groups/haining/maarowosegbe/micromamba"
+
+def mamba_activate(env_name):
+    return (
+        f"export MAMBA_ROOT_PREFIX={_MAMBA_ROOT}\n"
+        f'eval "$({_MAMBA_EXE} shell hook --shell bash)"\n'
+        f"micromamba activate {env_name}"
+    )
+
+# ── Load sample sheet ─────────────────────────────────────────────────
+samples_df = pd.read_csv(config["samples"], sep="\t", dtype=str, comment="#").set_index("sample")
+ALL_SAMPLES = list(samples_df.index)
+
+def get_r1(wildcards):
+    return samples_df.loc[wildcards.sample, "fastq_r1"]
+
+def get_r2(wildcards):
+    return samples_df.loc[wildcards.sample, "fastq_r2"]
+
+def get_enzyme(wildcards):
+    val = samples_df.loc[wildcards.sample, "restriction_enzyme"]
+    return val if pd.notna(val) and val != "" else config["genome"]["restriction_enzyme"]
+
+wildcard_constraints:
+    sample = "|".join(map(re.escape, ALL_SAMPLES)),
+
+include: "rules/01_qc_trim.smk"
+include: "rules/02_juicer_core.smk"
+include: "rules/03_downstream_analysis.smk"
+
+# ── Master target rule ────────────────────────────────────────────────
+rule all:
+    input:
+        expand(f"{config['outdir']}/qc/multiqc_report.html"),
+        # Core Juicer output + built-in QC gate for every sample
+        expand(f"{config['outdir']}/{{sample}}/aligned/inter_30.hic", sample=ALL_SAMPLES),
+        expand(f"{config['outdir']}/{{sample}}/aligned/inter_30_validate.log", sample=ALL_SAMPLES),
+        expand(f"{config['outdir']}/qc/{{sample}}_hic_qc_summary.txt", sample=ALL_SAMPLES),
+        # TADs (Arrowhead) + TAD-count QC gate
+        expand(f"{config['outdir']}/{{sample}}/aligned/tads_genome_wide/{config['tads']['resolution']}_blocks.bed",
+               sample=ALL_SAMPLES),
+        expand(f"{config['outdir']}/qc/{{sample}}_tad_qc_summary.txt", sample=ALL_SAMPLES),
+        # Contact matrices + A/B compartments (per configured chrom subset)
+        expand(f"{config['outdir']}/{{sample}}/aligned/matrices/{{chrom}}_contacts_{config['matrices']['dump_resolution']}.txt",
+               sample=ALL_SAMPLES, chrom=config["matrices"]["chroms_for_dump"]),
+        expand(f"{config['outdir']}/{{sample}}/aligned/compartments/{{chrom}}_eigenvector_{config['compartments']['resolution']}.txt",
+               sample=ALL_SAMPLES, chrom=config["compartments"]["chroms"]),
+        expand(f"{config['outdir']}/{{sample}}/aligned/compartments/{{chrom}}_pearsons_{config['compartments']['resolution']}.txt",
+               sample=ALL_SAMPLES, chrom=config["compartments"]["chroms"]),
+        # Loops (HiCCUPS) — optional, GPU-shaped workload; see config.yaml
+        (expand(f"{config['outdir']}/{{sample}}/aligned/loops/postprocessed_pixels_{config['loops']['resolutions'][0]}.bedpe",
+                sample=ALL_SAMPLES)
+         if config["loops"]["run"] else []),

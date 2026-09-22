@@ -1,0 +1,120 @@
+# ══════════════════════════════════════════════════════════════════════
+# Hi-C (Juicer) Pipeline — Master Configuration
+# Edit this file before every run. All paths are absolute or relative
+# to the repository root. Do NOT commit real sample data paths beyond
+# what's already here; xdisk paths are fine (no data lives in git).
+# ══════════════════════════════════════════════════════════════════════
+#
+# Source tutorial: ngs101.com "How to Analyze Hi-C Data for Absolute
+# Beginners: From Raw Reads to 3D Genome Organization with Juicer"
+# Module map:
+#   QC + trim         -> 01_qc_trim.smk    (FastQC, Trim Galore)
+#   Juicer core        -> 02_juicer_core.smk (alignment -> dedup -> .hic, via juicer.sh)
+#   Downstream analysis -> 03_downstream_analysis.smk (TADs, loops, compartments, matrices)
+#
+# See docs/KEY_CONCEPTS.md for the "why" behind every non-obvious choice below,
+# in particular: why juicer.sh runs as one monolithic rule instead of being
+# decomposed into per-stage Snakemake rules, and the HiCCUPS GPU caveat.
+
+# ── Reference genome (hg38 — the tutorial's own choice) ────────────────
+# UA HPC paths — xdisk is your large-storage mount.
+# Run scripts/00_download_refs.sh first, then scripts/02_setup_juicer.sh.
+genome:
+  assembly: "hg38"
+  fasta:        "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/ref/hg38.fa"
+  chrom_sizes:  "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/ref/hg38.chrom.sizes"
+  # MboI (GATC) is the tutorial's default — a 4-cutter giving high-resolution
+  # (kb-scale) maps; HindIII (AAGCTT, 6-cutter) trades resolution for coverage
+  # depth needed at lower sequencing effort. Must match the enzyme actually
+  # used in the wet-lab Hi-C library prep — this is not a tunable analysis
+  # parameter, it's a fact about the input data (see docs/KEY_CONCEPTS.md).
+  restriction_enzyme: "MboI"
+  restriction_sites:  "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/ref/hg38_MboI.txt"
+  # Autosomes + X only — matches the tutorial's own -c list for Arrowhead/
+  # HiCCUPS (chrY/chrM excluded: pseudoautosomal/haploid regions break the
+  # diploid contact-frequency assumptions these callers use).
+  chroms: ["chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10",
+           "chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19",
+           "chr20","chr21","chr22","chrX"]
+
+organism: "human"
+
+# ── Samples ──────────────────────────────────────────────────────────
+samples: "config/samples.tsv"
+
+# ── Read library ────────────────────────────────────────────────────
+library:
+  paired: true
+
+# ── Trimming (Trim Galore) ──────────────────────────────────────────
+# Tutorial values — deliberately more permissive than the sibling
+# WGS pipeline's (length>=50): Hi-C reads are chimeric/junction-spanning by
+# design, so aggressive length filtering discards real signal.
+trimming:
+  quality: 20
+  min_length: 20
+  cores: 8
+
+# ── Juicer core pipeline ────────────────────────────────────────────
+juicer:
+  # Populated by scripts/02_setup_juicer.sh — baked into containers/hic_juicer.sif
+  # too, so --use-singularity runs never touch these host paths.
+  juicer_dir: "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/tools/juicer"
+  threads: 16
+  # inter_30.hic (MAPQ>=30, this pipeline's primary output) keeps only
+  # confidently-unique alignments; inter.hic (MAPQ>=0, also produced by
+  # juicer.sh but not tracked as a Snakemake output here) includes
+  # multi-mapped reads and is noisier — downstream rules all read inter_30.hic.
+  mapq_filter: 30
+
+# ── QC benchmarks (from the tutorial's own stated expected ranges — a
+# rule-of-thumb sanity check, not a peer-reviewed statistical threshold;
+# see docs/KEY_CONCEPTS.md before treating a WARN as a hard failure) ────
+qc_benchmarks:
+  inter_chrom_pct_min: 5
+  inter_chrom_pct_max: 40
+  valid_pairs_min: 10000000          # 10M — floor for "basic" resolution
+  valid_pairs_high_res: 100000000    # 100M — floor for loop/TAD-caller-grade resolution
+  tad_count_min: 2000
+  tad_count_max: 5000
+
+# ── TAD calling (Arrowhead) ─────────────────────────────────────────
+tads:
+  min_resolution: 5000     # -m: minimum contact-matrix resolution Arrowhead will consider
+  resolution: 25000        # -r: resolution TAD boundaries are called at
+  norm: "KR"                # Knight-Ruiz matrix balancing
+
+# ── Contact matrix extraction (dump) + A/B compartments ─────────────
+matrices:
+  dump_resolution: 25000
+  chroms_for_dump: ["chr1"]          # tutorial only demonstrates chr1; extend as needed
+compartments:
+  resolution: 100000
+  norm: "KR"
+  chroms: ["chr1"]
+
+# ── Chromatin loop calling (HiCCUPS) ────────────────────────────────
+# HiCCUPS is GPU-accelerated in juicer_tools; the CPU fallback runs but can
+# take many hours to days on a genome-wide human map (see docs/KEY_CONCEPTS.md).
+# Toggle off entirely (loops.run: false) if no GPU partition is available and
+# you don't need loop calls.
+loops:
+  run: true
+  use_gpu: false             # flip true + point workflow/profiles/slurm at a GPU partition
+  resolutions: [5000, 10000]
+  fdr: [0.1, 0.1]
+  peak_width: [4, 2]
+  window: [7, 5]
+  cluster_radius: [20000, 20000]
+
+# ── Container strategy ──────────────────────────────────────────────
+# Set use_singularity: true to run every rule inside its Apptainer SIF.
+# Set use_conda: true to use the micromamba YAML files directly.
+use_singularity: false   # flip to true after running containers/build_all_sifs.sh
+use_conda: true
+
+singularity_args: "--bind /xdisk,/groups"
+
+# ── Output directories ───────────────────────────────────────────────
+outdir: "results"
+logdir: "logs"
