@@ -12,6 +12,10 @@
 #SBATCH --mem=32gb
 #SBATCH --time=12:00:00
 
+set -euo pipefail   # without this, a failed step here (e.g. a network hiccup
+                     # mid-download) prints nothing wrong and the job still
+                     # walks through every remaining echo as if it succeeded
+
 echo "========== Setup started at: $(date) =========="
 
 SCRIPT_BASE=/home/u11/maarowosegbe/Hi-C_juicer_pipeline
@@ -37,5 +41,5 @@ REF_DIR="${DATA_BASE}/ref" TOOLS_DIR="${DATA_BASE}/tools" ENZYME=MboI \
   "${MC}" run -n hic_juicer_env bash scripts/02_generate_restriction_sites.sh
 
 echo "========== Setup finished at: $(date) =========="
-echo "Next: download test data (scripts/03_download_test_data.sh), fill in"
-echo "config/samples.tsv's fastq_r1/fastq_r2, then submit slurm/02_pipeline.slurm."
+echo "Next: submit slurm/02_download_test_data.slurm, fill in"
+echo "config/samples.tsv's fastq_r1/fastq_r2, then submit slurm/03_pipeline.slurm."

@@ -16,6 +16,11 @@
 #SBATCH --mem-per-cpu=4gb
 #SBATCH --time=240:00:00       # controller must stay alive for the whole run
 
+set -euo pipefail   # pipefail matters here specifically: the run below pipes
+                     # through `tee`, and without it a failing snakemake
+                     # command would still exit 0 (tee's own exit code),
+                     # masking the failure from SLURM's job accounting
+
 # --------------------------------------------------------------
 ### PART 2: Run Snakemake pipeline
 # --------------------------------------------------------------

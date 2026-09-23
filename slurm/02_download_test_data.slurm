@@ -15,6 +15,9 @@
 #SBATCH --mem=16gb
 #SBATCH --time=6:00:00
 
+set -euo pipefail   # without this, a failed prefetch/fasterq-dump prints
+                     # nothing wrong and the job still reports "finished"
+
 echo "========== Test data download started at: $(date) =========="
 
 SCRIPT_BASE=/home/u11/maarowosegbe/Hi-C_juicer_pipeline
