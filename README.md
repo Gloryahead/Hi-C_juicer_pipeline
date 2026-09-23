@@ -112,6 +112,10 @@ in one SLURM job.
 DATA_DIR=data/fastq bash scripts/03_download_test_data.sh
 ```
 
+Or submit `slurm/02_download_test_data.slurm` (recommended — ~202M read
+pairs / ~40GB, not login-node-appropriate; see
+[docs/KEY_CONCEPTS.md](docs/KEY_CONCEPTS.md) §9).
+
 Downloads SRR1658570 as paired FASTQs. Then edit `config/samples.tsv`'s
 `hic1` row: `fastq_r1`/`fastq_r2` → these two paths. Add more rows for your
 own samples.
@@ -126,7 +130,7 @@ bash scripts/run_pipeline.sh --dry-run
 bash scripts/run_pipeline.sh
 ```
 
-Or submit `slurm/02_pipeline.slurm` (recommended — a long-running controller
+Or submit `slurm/03_pipeline.slurm` (recommended — a long-running controller
 job that submits every rule as its own child SLURM job automatically).
 
 Run just through the core `.hic` file (skip TADs/loops/compartments):
