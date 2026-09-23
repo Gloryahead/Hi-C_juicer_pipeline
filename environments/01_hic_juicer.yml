@@ -14,7 +14,7 @@ dependencies:
   - openjdk=17                  # juicer_tools.jar (HiCCUPS/Arrowhead/dump/eigenvector) needs a modern JVM; 17 validated against juicer_tools 2.17.00
   - bwa=0.7.19                  # tutorial uses classic BWA-MEM, not bwa-mem2 — Juicer's own scripts assume classic bwa's exact stderr/index-file format. Not 0.7.17: bioconda never rebuilt that old a build against modern zlib (only libzlib<1.3 builds exist), which conflicts with samtools=1.23's libzlib>=1.3.1 requirement in the same env — 0.7.19 is the same `bwa mem` behavior, just a build with a compatible zlib pin
   - samtools=1.23
-  - sra-tools=2.9.6             # fasterq-dump for the tutorial's SRR1658570 test dataset — pinned to the version validated in the sibling WGS pipeline's download path
+  - sra-tools=3.4.1             # prefetch/fasterq-dump for the tutorial's SRR1658570 test dataset. NOT 2.9.6 (what the sibling WGS pipeline pins): that 2019-era build bundles its own mbedtls TLS stack with an outdated cert trust store — every connection to NCBI now fails TLS handshake with "certificate is not correctly signed by the trusted CA" (hit this for real against live NCBI infra). 3.4.1 depends on the system ca-certificates package instead of a frozen bundle.
   - fastqc=0.12.*
   - trim-galore=0.6.*
   - multiqc=1.22.*
