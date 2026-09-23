@@ -28,4 +28,4 @@ done
 
 echo ""
 echo "All environments created. Next: scripts/00_download_refs.sh, then"
-echo "scripts/02_setup_juicer.sh to install Juicer itself into hic_juicer_env's reach."
+echo "scripts/01_setup_juicer.sh to install Juicer itself into hic_juicer_env's reach."
