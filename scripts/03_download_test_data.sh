@@ -38,13 +38,26 @@ _looks_complete() {
 if _looks_complete "${ACCESSION}_1.fastq.gz" && _looks_complete "${ACCESSION}_2.fastq.gz"; then
   echo "  → ${ACCESSION} FASTQs already present and look complete, skipping"
   exit 0
-elif [[ -f "${ACCESSION}_1.fastq.gz" || -f "${ACCESSION}_2.fastq.gz" ]]; then
+elif [[ -f "${ACCESSION}_1.fastq.gz" || -f "${ACCESSION}_2.fastq.gz" || -d "${ACCESSION}" ]]; then
+  # ${ACCESSION}/ is prefetch's OWN working directory (${ACCESSION}/${ACCESSION}.sra) —
+  # a run that fails before reaching the final `rm -rf "${ACCESSION}"` below leaves
+  # it behind, and prefetch will silently reuse whatever partial/stale .sra is in
+  # there on the next attempt ("is found locally") instead of fetching fresh. Hit
+  # this for real: a stale dir here is exactly what let a 25GB accession quietly
+  # resolve to a stale local copy once prefetch's own size cap skipped the real
+  # fresh fetch. Must go, not just the final fastq(.gz) outputs.
   echo "  → found an incomplete/corrupt leftover from a prior failed run — removing and re-downloading"
   rm -f "${ACCESSION}_1.fastq.gz" "${ACCESSION}_2.fastq.gz" "${ACCESSION}_1.fastq" "${ACCESSION}_2.fastq"
+  rm -rf "${ACCESSION}"
 fi
 
 echo "  ↓ prefetch ${ACCESSION}"
-prefetch "${ACCESSION}"
+# --max-size: prefetch's default cap is 20GB; SRR1658570's real file is ~25GB and
+# gets silently "skipped" (falling back to whatever's cached, if anything) without
+# this — hit that for real. --force yes: ignore/overwrite anything prefetch itself
+# finds already cached, so behavior doesn't depend on what a prior failed attempt
+# left behind (the cleanup above already handles OUR side of that).
+prefetch --max-size 30g --force yes "${ACCESSION}"
 
 echo "  → fasterq-dump (paired)"
 fasterq-dump "${ACCESSION}" --split-files --threads 8
