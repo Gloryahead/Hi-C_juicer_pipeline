@@ -8,7 +8,8 @@
 #   bash scripts/run_pipeline.sh --dry-run    # check DAG without submitting
 #   bash scripts/run_pipeline.sh --unlock     # unlock stale Snakemake directory
 #   bash scripts/run_pipeline.sh --report     # generate HTML report
-#   bash scripts/run_pipeline.sh --target results/hic1/aligned/inter_30.hic
+#   bash scripts/run_pipeline.sh --target /xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/results/hic1/aligned/inter_30.hic
+#   (--target must match config.yaml's outdir — an absolute xdisk path, not "results/...")
 
 set -euo pipefail
 
@@ -67,5 +68,5 @@ echo ""
 
 if ! $DRY_RUN && ! $REPORT; then
   echo ""
-  echo "=== Pipeline finished === (see results/qc/hic_qc_summary.txt and results/*/aligned/inter_30_qc.txt)"
+  echo "=== Pipeline finished === (see config.yaml's outdir — QC summaries under <outdir>/qc/)"
 fi

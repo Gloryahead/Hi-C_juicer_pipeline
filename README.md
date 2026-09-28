@@ -133,10 +133,14 @@ bash scripts/run_pipeline.sh
 Or submit `slurm/03_pipeline.slurm` (recommended — a long-running controller
 job that submits every rule as its own child SLURM job automatically).
 
-Run just through the core `.hic` file (skip TADs/loops/compartments):
+Run just through the core `.hic` file (skip TADs/loops/compartments) — the
+target must be the full path under `config.yaml`'s `outdir`
+(`/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/results` by default, an
+absolute xdisk path on purpose — see
+[docs/KEY_CONCEPTS.md](docs/KEY_CONCEPTS.md) §12):
 
 ```bash
-bash scripts/run_pipeline.sh --target results/hic1/aligned/inter_30.hic
+bash scripts/run_pipeline.sh --target /xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/results/hic1/aligned/inter_30.hic
 ```
 
 ### Step 6 — (Optional) Build the Apptainer container
@@ -156,12 +160,14 @@ either way.
 Download [Juicebox](https://github.com/aidenlab/Juicebox/releases) or use
 the [web version](https://aidenlab.org/juicebox/). Load, per sample:
 
+All paths below are relative to `config.yaml`'s `outdir`:
+
 | File | Role |
 |------|------|
-| `results/{sample}/aligned/inter_30.hic` | primary contact map |
-| `results/{sample}/aligned/tads_genome_wide/25000_blocks.bedpe` | TAD annotations |
-| `results/{sample}/aligned/loops/postprocessed_pixels_5000.bedpe` | loop annotations (if `loops.run: true`) |
-| `results/{sample}/aligned/compartments/{chrom}_eigenvector_100000.txt` | compartment track |
+| `{sample}/aligned/inter_30.hic` | primary contact map |
+| `{sample}/aligned/tads_genome_wide/25000_blocks.bedpe` | TAD annotations |
+| `{sample}/aligned/loops/postprocessed_pixels_5000.bedpe` | loop annotations (if `loops.run: true`) |
+| `{sample}/aligned/compartments/{chrom}_eigenvector_100000.txt` | compartment track |
 
 Start at 1MB resolution → zoom to 100kb (compartments) → 25kb (TAD/loop detail).
 

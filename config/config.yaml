@@ -116,5 +116,14 @@ use_conda: true
 singularity_args: "--bind /xdisk,/groups"
 
 # ── Output directories ───────────────────────────────────────────────
-outdir: "results"
-logdir: "logs"
+# MUST be absolute xdisk paths, not relative ones. slurm/*.slurm all `cd`
+# into SCRIPT_BASE (the home-dir git clone) before running Snakemake — a
+# relative "results"/"logs" here resolves against THAT directory, not
+# xdisk, so every pipeline output (including multi-GB intermediates like
+# Juicer's decompressed FASTQs and inter_30.hic) silently lands in your
+# quota-limited home directory instead. Hit this for real: it grew a home
+# directory to 32GB mid-run. Every other big-data path in this file
+# (genome.*, juicer.juicer_dir) is already absolute for the same reason —
+# these two were the one pair that got missed.
+outdir: "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/results"
+logdir: "/xdisk/haining/maarowosegbe/Hi-C_juicer_pipeline/logs"
