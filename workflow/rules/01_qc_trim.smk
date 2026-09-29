@@ -51,7 +51,15 @@ rule trim_galore:
     log:   f"{LOGDIR}/trim_galore/{{sample}}.log"
     threads: config["trimming"]["cores"]
     resources:
-        mem_mb = 8000, runtime = 120, slurm_partition = "standard",
+        # runtime was 120 (copied from the sibling WGS pipeline's trim_galore,
+        # sized for much smaller inputs) and timed out twice in a row on this
+        # dataset's real size (202M read pairs): the first attempt got through
+        # trimming + validation + FastQC on R1 (95% done) and was still
+        # running FastQC on R2 when it hit the 2h wall. Both automatic
+        # retries (profile's restart-times: 2) hit the identical limit and
+        # failed identically — a fixed runtime like this doesn't get better
+        # on retry. Bumped with real margin, not just "a bit more."
+        mem_mb = 8000, runtime = 360, slurm_partition = "standard",
     params:
         activate   = mamba_activate("hic_juicer_env"),
         quality    = config["trimming"]["quality"],
