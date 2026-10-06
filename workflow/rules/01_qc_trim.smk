@@ -65,10 +65,20 @@ rule trim_galore:
         quality    = config["trimming"]["quality"],
         min_length = config["trimming"]["min_length"],
         outdir     = f"{OUTDIR}/trimmed",
+        # Trim Galore names its outputs after the INPUT FASTQ, not the sample:
+        # SRR1658570_1.fastq.gz -> SRR1658570_1_val_1.fq.gz and
+        # SRR1658570_1.fastq.gz_trimming_report.txt. Matching on the sample
+        # name (hic1*) found nothing, and a trailing `|| true` hid that, so
+        # three 2h+ runs finished trimming and then failed as "missing output".
+        base1 = lambda wc, input: input.r1.rsplit("/", 1)[-1],
+        base2 = lambda wc, input: input.r2.rsplit("/", 1)[-1],
+        stem1 = lambda wc, input: re.sub(r"\.(fastq|fq)(\.gz)?$", "", input.r1.rsplit("/", 1)[-1]),
+        stem2 = lambda wc, input: re.sub(r"\.(fastq|fq)(\.gz)?$", "", input.r2.rsplit("/", 1)[-1]),
     shell:
         """
         set -eo pipefail
         {params.activate}
+        mkdir -p $(dirname {output.report})
         trim_galore \
             --quality {params.quality} \
             --length {params.min_length} \
@@ -77,9 +87,10 @@ rule trim_galore:
             --output_dir {params.outdir} \
             {input.r1} {input.r2} \
             2>{log}
-        mv {params.outdir}/{wildcards.sample}*_val_1.fq.gz {output.r1} 2>>{log} || true
-        mv {params.outdir}/{wildcards.sample}*_val_2.fq.gz {output.r2} 2>>{log} || true
-        mv {params.outdir}/{wildcards.sample}*_trimming_report.txt {output.report} 2>>{log} || true
+        mv {params.outdir}/{params.stem1}_val_1.fq.gz {output.r1}
+        mv {params.outdir}/{params.stem2}_val_2.fq.gz {output.r2}
+        cat {params.outdir}/{params.base1}_trimming_report.txt \
+            {params.outdir}/{params.base2}_trimming_report.txt > {output.report}
         """
 
 
