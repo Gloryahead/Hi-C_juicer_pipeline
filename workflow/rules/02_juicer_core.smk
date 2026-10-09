@@ -59,7 +59,7 @@ rule juicer_pipeline:
             -y {input.restriction_sites} \
             -z {input.ref} \
             -t {threads} \
-            2>{log}
+            > {log} 2>&1
         """
 
 
