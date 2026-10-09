@@ -39,6 +39,11 @@ rule juicer_pipeline:
         # data/accessions/01_hic_test_data.txt) is squarely in that range —
         # this is not a quick toy run, size the job accordingly.
         mem_mb = 131072, runtime = 2880, slurm_partition = "standard",
+        # The profile's default cpus_per_task: 4 overrides `threads`, and the
+        # job's Snakemake then scales the rule down to that, so juicer.sh was
+        # being started with -t 2 / -t 4 instead of 16. Ask for the CPUs the
+        # alignment is meant to use.
+        cpus_per_task = _JUICER["threads"],
     params:
         activate  = mamba_activate("hic_juicer_env"),
         juicer_sh = f"{_JUICER['juicer_dir']}/scripts/common/juicer.sh",
@@ -50,6 +55,14 @@ rule juicer_pipeline:
         """
         set -eo pipefail
         {params.activate}
+        # juicer.sh refuses to start if <topdir>/aligned exists. Snakemake
+        # creates the parent directory of every declared output (aligned/
+        # holds inter_30.hic) just before the job runs, so it always does:
+        # "***! Move or remove directory .../aligned before proceeding."
+        # rmdir only removes an EMPTY directory; with `set -e` a non-empty
+        # one (a partial earlier run) stops the job here instead of being
+        # silently deleted.
+        if [ -d {params.topdir}/aligned ]; then rmdir {params.topdir}/aligned; fi
         bash {params.juicer_sh} \
             -D {params.juicer_d} \
             -d {params.topdir} \
