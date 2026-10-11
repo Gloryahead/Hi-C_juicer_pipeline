@@ -63,6 +63,12 @@ rule juicer_pipeline:
         # one (a partial earlier run) stops the job here instead of being
         # silently deleted.
         if [ -d {params.topdir}/aligned ]; then rmdir {params.topdir}/aligned; fi
+        # Run from the xdisk sample directory. Snakemake jobs start in the
+        # home-directory repo clone, and juicer.sh's chimera-handling
+        # `samtools sort` writes its temporary BAM files to "./", so with the
+        # job in home they would fill the quota (job 24186029 died there with
+        # "No space left on device" after a 6,705 s alignment).
+        cd {params.topdir}
         bash {params.juicer_sh} \
             -D {params.juicer_d} \
             -d {params.topdir} \
