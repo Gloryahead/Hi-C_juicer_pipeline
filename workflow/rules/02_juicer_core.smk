@@ -29,7 +29,7 @@ rule juicer_pipeline:
     output:
         hic       = f"{OUTDIR}/{{sample}}/aligned/inter_30.hic",
         stats     = f"{OUTDIR}/{{sample}}/aligned/inter_30.txt",
-        merged    = f"{OUTDIR}/{{sample}}/aligned/merged_nodups.txt",
+        merged    = f"{OUTDIR}/{{sample}}/aligned/merged30.txt",
     log: f"{LOGDIR}/juicer/{{sample}}.log"
     threads: _JUICER["threads"]
     resources:
@@ -38,7 +38,12 @@ rule juicer_pipeline:
         # tutorial's own SRR1658570 (~202M read pairs, see
         # data/accessions/01_hic_test_data.txt) is squarely in that range —
         # this is not a quick toy run, size the job accordingly.
-        mem_mb = 131072, runtime = 2880, slurm_partition = "standard",
+        # mem_mb must exceed juicer.sh's own hard-coded Java heap: it sets
+        # _JAVA_OPTIONS="-Xmx150000m -Xms150000m" for map creation and
+        # addNorm. With 131072 the kernel OOM-killed juicer_tools addNorm
+        # twice (job 24212676), leaving both .hic files without
+        # normalization vectors. 190000 leaves room for the 150000 MB heap.
+        mem_mb = 190000, runtime = 2880, slurm_partition = "standard",
         # The profile's default cpus_per_task: 4 overrides `threads`, and the
         # job's Snakemake then scales the rule down to that, so juicer.sh was
         # being started with -t 2 / -t 4 instead of 16. Ask for the CPUs the

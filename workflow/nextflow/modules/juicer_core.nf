@@ -10,7 +10,7 @@ process JUICER_CORE {
     input:
         tuple val(sample), path(r1_fastq), path(r2_fastq)
     output:
-        tuple val(sample), path("inter_30.hic"), path("inter_30.txt"), path("merged_nodups.txt"), emit: hic
+        tuple val(sample), path("inter_30.hic"), path("inter_30.txt"), path("merged30.txt"), emit: hic
 
     script:
     """
@@ -28,6 +28,6 @@ process JUICER_CORE {
         -z ${params.genome_fasta} \
         -t ${task.cpus}
 
-    mv aligned/inter_30.hic aligned/inter_30.txt aligned/merged_nodups.txt .
+    mv aligned/inter_30.hic aligned/inter_30.txt aligned/merged30.txt .
     """
 }

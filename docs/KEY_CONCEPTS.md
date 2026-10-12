@@ -125,7 +125,7 @@ Every `slurm/*.slurm` script `cd`s into `SCRIPT_BASE`
 before running Snakemake. If `config.yaml`'s `outdir`/`logdir` are relative
 (`"results"`/`"logs"`), Snakemake resolves them against that `cd` target —
 so every pipeline output, including multi-GB intermediates (Juicer's
-decompressed FASTQs, `inter_30.hic`, `merged_nodups.txt`), silently lands in
+decompressed FASTQs, `inter_30.hic`, `merged30.txt`), silently lands in
 your quota-limited home directory instead of the large-storage `xdisk`
 mount. Hit this for real: it grew the home directory to 32GB mid-run, on an
 account where a quota overrun would have broken every other project sharing
