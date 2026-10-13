@@ -93,7 +93,11 @@ rule juicer_validate:
     output: log = f"{OUTDIR}/{{sample}}/aligned/inter_30_validate.log"
     log: f"{LOGDIR}/juicer_validate/{{sample}}.log"
     threads: 1
-    resources: mem_mb=32000, runtime=60, slurm_partition="standard"
+    # runtime was 60 and TIMEOUT'd three times (jobs 24226239, 24226622,
+    # 24227177), each using only 3-4 GB: `validate` walks every chromosome
+    # pair including the ~450 alt/random/unplaced contigs of hg38, printing
+    # a "no reads" warning per pair, and does not finish in an hour.
+    resources: mem_mb=16000, runtime=720, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
         jar      = f"{_JUICER['juicer_dir']}/scripts/common/juicer_tools.jar",
@@ -101,7 +105,7 @@ rule juicer_validate:
         """
         set -eo pipefail
         {params.activate}
-        java -Xmx28g -jar {params.jar} validate {input.hic} > {output.log} 2>{log}
+        java -Xmx12g -jar {params.jar} validate {input.hic} > {output.log} 2>{log}
         """
 
 
