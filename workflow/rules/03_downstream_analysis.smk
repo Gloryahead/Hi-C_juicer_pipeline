@@ -22,7 +22,8 @@ rule arrowhead_tads:
         bed   = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide/{_TADS['resolution']}_blocks.bed",
     log: f"{LOGDIR}/arrowhead/{{sample}}.log"
     threads: 4
-    resources: mem_mb=32000, runtime=240, slurm_partition="standard"
+    # 32000 MB with -Xmx28g was OOM-killed three times (job 24226212) on the full-depth map.
+    resources: mem_mb=96000, runtime=240, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
         chroms   = ",".join(config["genome"]["chroms"]),
@@ -35,7 +36,7 @@ rule arrowhead_tads:
         set -eo pipefail
         {params.activate}
         mkdir -p {params.outdir}
-        java -Xmx28g -jar {_JAR} arrowhead \
+        java -Xmx90g -jar {_JAR} arrowhead \
             -c {params.chroms} \
             -m {params.min_res} \
             -r {params.res} \
@@ -169,12 +170,17 @@ rule hiccups_loops:
         window   = ",".join(str(x) for x in _LOOPS["window"]),
         radius   = ",".join(str(x) for x in _LOOPS["cluster_radius"]),
         outdir   = f"{OUTDIR}/{{sample}}/aligned/loops",
+        # Without a GPU, hiccups tries to build a CUDA controller and dies
+        # ("Cannot run program nvcc"). --cpu selects the experimental CPU
+        # implementation (juicer_tools 2.17.00), which only searches within
+        # 8 MB of the diagonal by default.
+        cpu_flag = "" if _LOOPS["use_gpu"] else "--cpu",
     shell:
         """
         set -eo pipefail
         {params.activate}
         mkdir -p {params.outdir}
-        java -Xmx60g -jar {_JAR} hiccups \
+        java -Xmx60g -jar {_JAR} hiccups {params.cpu_flag} \
             -m {params.m} \
             -r {params.res} \
             -f {params.fdr} \
