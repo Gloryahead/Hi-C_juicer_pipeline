@@ -22,8 +22,10 @@ rule arrowhead_tads:
         bed   = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide/{_TADS['resolution']}_blocks.bed",
     log: f"{LOGDIR}/arrowhead/{{sample}}.log"
     threads: 4
-    # 32000 MB with -Xmx28g was OOM-killed three times (job 24226212) on the full-depth map.
-    resources: mem_mb=96000, runtime=240, slurm_partition="standard"
+    # OOM-killed at 32000 MB / -Xmx28g (job 24226212) and again at 96000 MB / -Xmx90g
+    # (job 24234538) on the full-depth map. juicer.sh's own Arrowhead run succeeded
+    # under a 150000 MB heap, so size above that.
+    resources: mem_mb=190000, runtime=240, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
         chroms   = ",".join(config["genome"]["chroms"]),
@@ -36,7 +38,7 @@ rule arrowhead_tads:
         set -eo pipefail
         {params.activate}
         mkdir -p {params.outdir}
-        java -Xmx90g -jar {_JAR} arrowhead \
+        java -Xmx180g -jar {_JAR} arrowhead \
             -c {params.chroms} \
             -m {params.min_res} \
             -r {params.res} \
