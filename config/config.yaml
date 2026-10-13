@@ -90,7 +90,12 @@ matrices:
   chroms_for_dump: ["chr1"]          # tutorial only demonstrates chr1; extend as needed
 compartments:
   resolution: 100000
-  norm: "KR"
+  # The tutorial uses KR, but this map has no KR expected-value vector for
+  # chr1 at 100 kb: `juicer_tools dump expected KR ... chr1 BP 100000` prints
+  # "O/E data not available" while VC returns 2,489 values, and eigenvector /
+  # pearsons exit on that check (job 24226212). VC is the supported
+  # alternative; this is a deliberate deviation from the tutorial.
+  norm: "VC"
   chroms: ["chr1"]
 
 # ── Chromatin loop calling (HiCCUPS) ────────────────────────────────
