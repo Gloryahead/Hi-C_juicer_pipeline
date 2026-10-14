@@ -30,19 +30,30 @@ def parse_stats(path):
     text = open(path).read()
     fields = {}
 
+    # Real Juicer 2.0 / juicer_tools 2.17.00 lines look like:
+    #   Sequenced Read Pairs:  193035634
+    #   Total Duplicates: 18692703 (10.30%, 9.68%)
+    #   Hi-C Contacts: 129,150,544 (66.91% / 79.36%)
+    #   Inter-chromosomal: 20,646,363 (10.70% / 12.69%)
+    # The two percentages are of all sequenced pairs and of unique pairs,
+    # NOT of Hi-C contacts, so the inter-chromosomal share is computed from
+    # the counts below instead of read off a percentage.
     def find_int(label):
-        m = re.search(rf"{label}\s*:\s*([\d,]+)", text, re.IGNORECASE)
+        m = re.search(rf"^\s*{label}\s*:\s*([\d,]+)", text, re.IGNORECASE | re.MULTILINE)
         return int(m.group(1).replace(",", "")) if m else None
 
-    def find_pct(label):
-        m = re.search(rf"{label}\s*:[^%]*\(\s*([\d.]+)\s*%\s*\)", text, re.IGNORECASE)
+    def find_first_pct(label):
+        m = re.search(rf"^\s*{label}\s*:\s*[\d,]+\s*\(\s*([\d.]+)\s*%", text, re.IGNORECASE | re.MULTILINE)
         return float(m.group(1)) if m else None
 
-    fields["sequenced_pairs"] = find_int("Sequenced Read Pairs") or find_int("Total Read Pairs")
-    fields["alignable_pairs"] = find_int(r"Alignable \(Normal\+Chimeric Paired\)") or find_int("Alignable")
-    fields["duplicates_pct"]  = find_pct("Duplicates") or find_pct("PCR Duplicates")
-    fields["inter_pct"]       = find_pct("Inter-chromosomal")
-    fields["intra_pct"]       = find_pct("Intra-chromosomal")
+    fields["sequenced_pairs"] = find_int("Sequenced Read Pairs")
+    fields["valid_pairs"]     = find_int("Hi-C Contacts")
+    fields["inter_count"]     = find_int("Inter-chromosomal")
+    fields["duplicates_pct"]  = find_first_pct("Total Duplicates")
+    if fields["valid_pairs"] and fields["inter_count"] is not None:
+        fields["inter_pct"] = 100.0 * fields["inter_count"] / fields["valid_pairs"]
+    else:
+        fields["inter_pct"] = None
     return fields
 
 
@@ -61,12 +72,15 @@ def main():
     lines = [f"Hi-C QC summary — sample: {args.sample}", "=" * 50]
     warnings = []
 
-    valid_pairs = f["alignable_pairs"]
+    if f["sequenced_pairs"] is not None:
+        lines.append(f"Sequenced read pairs: {f['sequenced_pairs']:,}")
+
+    valid_pairs = f["valid_pairs"]
     if valid_pairs is None:
-        lines.append("Valid (alignable) read pairs: UNKNOWN — could not parse inter_30.txt")
-        warnings.append("Could not parse alignable-pairs count from inter_30.txt")
+        lines.append("Valid read pairs (Hi-C contacts, MAPQ>=30, de-duplicated): UNKNOWN — could not parse inter_30.txt")
+        warnings.append("Could not parse the Hi-C Contacts count from inter_30.txt")
     else:
-        lines.append(f"Valid (alignable) read pairs: {valid_pairs:,}")
+        lines.append(f"Valid read pairs (Hi-C contacts, MAPQ>=30, de-duplicated): {valid_pairs:,}")
         if valid_pairs < args.pairs_min:
             warnings.append(
                 f"Valid pairs ({valid_pairs:,}) below the basic-resolution floor "
@@ -81,13 +95,13 @@ def main():
     inter = f["inter_pct"]
     if inter is None:
         lines.append("Inter-chromosomal contact %: UNKNOWN — could not parse inter_30.txt")
-        warnings.append("Could not parse inter-chromosomal %% from inter_30.txt")
+        warnings.append("Could not parse the inter-chromosomal count from inter_30.txt")
     else:
-        lines.append(f"Inter-chromosomal contact %: {inter:.2f}%")
+        lines.append(f"Inter-chromosomal contact % (of Hi-C contacts): {inter:.2f}%")
         if not (args.inter_min <= inter <= args.inter_max):
             warnings.append(
-                f"Inter-chromosomal %% ({inter:.2f}%%) outside the expected "
-                f"{args.inter_min}-{args.inter_max}%% range — check for a failed "
+                f"Inter-chromosomal % ({inter:.2f}%) outside the expected "
+                f"{args.inter_min}-{args.inter_max}% range — check for a failed "
                 f"in-situ ligation step or excessive noise."
             )
 
