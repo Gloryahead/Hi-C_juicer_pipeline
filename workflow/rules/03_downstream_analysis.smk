@@ -85,6 +85,7 @@ rule dump_contacts:
     params:
         activate = mamba_activate("hic_juicer_env"),
         res      = _MATS["dump_resolution"],
+        norm     = _MATS["norm"],
         outdir   = f"{OUTDIR}/{{sample}}/aligned/matrices",
     shell:
         """
@@ -92,11 +93,14 @@ rule dump_contacts:
         {params.activate}
         mkdir -p {params.outdir}
         java -Xmx14g -jar {_JAR} dump \
-            observed KR {input.hic} \
+            observed {params.norm} {input.hic} \
             {wildcards.chrom} {wildcards.chrom} \
             BP {params.res} \
             {output.matrix} \
             2>{log}
+        # juicer_tools can exit 0 after printing a normalization error and
+        # leave an empty file; fail the job instead of reporting success.
+        test -s {output.matrix}
         """
 
 
@@ -121,6 +125,9 @@ rule eigenvector_compartments:
             {params.norm} {input.hic} {wildcards.chrom} BP {params.res} \
             {output} \
             2>{log}
+        # An empty result file means juicer_tools printed an error and still
+        # exited 0 (the chr1 eigenvector came out with 0 lines on 2026-10-13).
+        test -s {output}
         """
 
 
@@ -144,6 +151,7 @@ rule pearsons_matrix:
             {params.norm} {input.hic} {wildcards.chrom} BP {params.res} \
             {output} \
             2>{log}
+        test -s {output}
         """
 
 

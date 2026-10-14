@@ -82,19 +82,23 @@ qc_benchmarks:
 tads:
   min_resolution: 5000     # -m: minimum contact-matrix resolution Arrowhead will consider
   resolution: 25000        # -r: resolution TAD boundaries are called at
-  norm: "KR"                # Knight-Ruiz matrix balancing
+  # The tutorial uses KR, but juicer_tools 2.17.00 no longer writes a KR vector:
+  # `validate` on this map lists INTER_SCALE, GW_SCALE, VC, VC_SQRT and SCALE
+  # (Balanced++) only. SCALE is its replacement for KR-style balancing; this is
+  # a deliberate deviation from the tutorial.
+  norm: "SCALE"
 
 # ── Contact matrix extraction (dump) + A/B compartments ─────────────
 matrices:
   dump_resolution: 25000
   chroms_for_dump: ["chr1"]          # tutorial only demonstrates chr1; extend as needed
+  norm: "SCALE"                      # same reason as tads.norm: no KR vector in this map
 compartments:
   resolution: 100000
-  # The tutorial uses KR, but this map has no KR expected-value vector for
-  # chr1 at 100 kb: `juicer_tools dump expected KR ... chr1 BP 100000` prints
-  # "O/E data not available" while VC returns 2,489 values, and eigenvector /
-  # pearsons exit on that check (job 24226212). VC is the supported
-  # alternative; this is a deliberate deviation from the tutorial.
+  # The tutorial uses KR, but this map has no KR vector at all (see tads.norm):
+  # `dump expected KR ... chr1 BP 100000` prints "O/E data not available" while
+  # VC returns 2,489 values, and eigenvector / pearsons exit on that check
+  # (job 24226212). VC is the supported alternative; deliberate deviation.
   norm: "VC"
   chroms: ["chr1"]
 
