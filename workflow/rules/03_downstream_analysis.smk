@@ -22,11 +22,10 @@ rule arrowhead_tads:
         bed   = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide/{_TADS['resolution']}_blocks.bed",
     log: f"{LOGDIR}/arrowhead/{{sample}}.log"
     threads: 4
-    # The OOM kills (32000, 96000 and 190000 MB; jobs 24226212, 24234538, 24262641)
-    # came from a 5000-bin window (-m), not from too little memory; with the default
-    # window 96000 MB is a generous request. Earlier note: killed at 96000 MB / -Xmx90g
-    # (job 24234538) on the full-depth map. juicer.sh's own Arrowhead run succeeded
-    # under a 150000 MB heap, so size above that.
+    # OOM kills at 32000, 96000 and 190000 MB (jobs 24226212, 24234538,
+    # 24262641) came from the 5000-bin window (-m), not from too little
+    # memory. With the default window, 96000 MB is a generous request; the
+    # real peak has not been measured.
     resources: mem_mb=96000, runtime=240, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
