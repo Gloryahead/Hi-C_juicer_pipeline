@@ -22,14 +22,16 @@ rule arrowhead_tads:
         bed   = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide/{_TADS['resolution']}_blocks.bed",
     log: f"{LOGDIR}/arrowhead/{{sample}}.log"
     threads: 4
-    # OOM-killed at 32000 MB / -Xmx28g (job 24226212) and again at 96000 MB / -Xmx90g
+    # The OOM kills (32000, 96000 and 190000 MB; jobs 24226212, 24234538, 24262641)
+    # came from a 5000-bin window (-m), not from too little memory; with the default
+    # window 96000 MB is a generous request. Earlier note: killed at 96000 MB / -Xmx90g
     # (job 24234538) on the full-depth map. juicer.sh's own Arrowhead run succeeded
     # under a 150000 MB heap, so size above that.
-    resources: mem_mb=190000, runtime=240, slurm_partition="standard"
+    resources: mem_mb=96000, runtime=240, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
         chroms   = ",".join(config["genome"]["chroms"]),
-        min_res  = _TADS["min_resolution"],
+        win_size = _TADS["window_size"],
         res      = _TADS["resolution"],
         norm     = _TADS["norm"],
         outdir   = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide",
@@ -38,9 +40,9 @@ rule arrowhead_tads:
         set -eo pipefail
         {params.activate}
         mkdir -p {params.outdir}
-        java -Xmx180g -jar {_JAR} arrowhead \
+        java -Xmx90g -jar {_JAR} arrowhead \
             -c {params.chroms} \
-            -m {params.min_res} \
+            -m {params.win_size} \
             -r {params.res} \
             -k {params.norm} \
             {input.hic} {params.outdir} \

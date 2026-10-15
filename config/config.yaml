@@ -80,7 +80,12 @@ qc_benchmarks:
 
 # ── TAD calling (Arrowhead) ─────────────────────────────────────────
 tads:
-  min_resolution: 5000     # -m: minimum contact-matrix resolution Arrowhead will consider
+  # -m is the size of the sliding window along the diagonal, in BINS (juicer_tools
+  # default 2000), not a "minimum resolution" as the tutorial describes it.
+  # Memory grows with its square: 5000 bins at 25 kb is a 125 Mb window and
+  # Arrowhead was OOM-killed at up to 190000 MB (jobs 24226212, 24234538,
+  # 24262641). Use the default.
+  window_size: 2000
   resolution: 25000        # -r: resolution TAD boundaries are called at
   # The tutorial uses KR, but juicer_tools 2.17.00 no longer writes a KR vector:
   # `validate` on this map lists INTER_SCALE, GW_SCALE, VC, VC_SQRT and SCALE
