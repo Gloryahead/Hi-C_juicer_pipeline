@@ -86,7 +86,7 @@ rule all:
         # Contact matrices + A/B compartments (per configured chrom subset)
         expand(f"{config['outdir']}/{{sample}}/aligned/matrices/{{chrom}}_contacts_{config['matrices']['dump_resolution']}.txt",
                sample=ALL_SAMPLES, chrom=config["matrices"]["chroms_for_dump"]),
-        expand(f"{config['outdir']}/{{sample}}/aligned/compartments/{{chrom}}_eigenvector_{config['compartments']['resolution']}.txt",
+        expand(f"{config['outdir']}/{{sample}}/aligned/compartments/{{chrom}}_eigenvector_{config['compartments']['eigenvector_resolution']}.txt",
                sample=ALL_SAMPLES, chrom=config["compartments"]["chroms"]),
         expand(f"{config['outdir']}/{{sample}}/aligned/compartments/{{chrom}}_pearsons_{config['compartments']['resolution']}.txt",
                sample=ALL_SAMPLES, chrom=config["compartments"]["chroms"]),

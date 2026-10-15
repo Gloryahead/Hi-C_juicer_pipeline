@@ -107,13 +107,13 @@ rule dump_contacts:
 # ── A/B compartment analysis: eigenvector decomposition + Pearson matrix ─
 rule eigenvector_compartments:
     input: hic = f"{OUTDIR}/{{sample}}/aligned/inter_30.hic"
-    output: f"{OUTDIR}/{{sample}}/aligned/compartments/{{chrom}}_eigenvector_{_COMP['resolution']}.txt"
+    output: f"{OUTDIR}/{{sample}}/aligned/compartments/{{chrom}}_eigenvector_{_COMP['eigenvector_resolution']}.txt"
     log: f"{LOGDIR}/eigenvector/{{sample}}_{{chrom}}.log"
     threads: 2
     resources: mem_mb=16000, runtime=60, slurm_partition="standard"
     params:
         activate = mamba_activate("hic_juicer_env"),
-        res      = _COMP["resolution"],
+        res      = _COMP["eigenvector_resolution"],
         norm     = _COMP["norm"],
         outdir   = f"{OUTDIR}/{{sample}}/aligned/compartments",
     shell:

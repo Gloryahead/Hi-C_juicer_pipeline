@@ -94,7 +94,14 @@ matrices:
   chroms_for_dump: ["chr1"]          # tutorial only demonstrates chr1; extend as needed
   norm: "SCALE"                      # same reason as tads.norm: no KR vector in this map
 compartments:
-  resolution: 100000
+  resolution: 100000            # Pearson correlation matrix (juicer_tools allows >= 50 kb)
+  # juicer_tools 2.17.00's Dataset.getEigenvector returns an EMPTY vector,
+  # silently and with exit status 0, for any bin size below
+  # HiCGlobals.MAX_EIGENVECTOR_ZOOM = 250000, so the tutorial's
+  # `eigenvector ... BP 100000` writes an empty file (confirmed on this map
+  # for VC, VC_SQRT and SCALE). Run the eigenvector at 250 kb instead; this
+  # is coarser than the tutorial's 100 kb.
+  eigenvector_resolution: 250000
   # The tutorial uses KR, but this map has no KR vector at all (see tads.norm):
   # `dump expected KR ... chr1 BP 100000` prints "O/E data not available" while
   # VC returns 2,489 values, and eigenvector / pearsons exit on that check
