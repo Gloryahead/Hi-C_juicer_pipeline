@@ -128,6 +128,16 @@ loops:
   window: [7, 5]
   cluster_radius: [20000, 20000]
 
+# ── Figures (workflow/scripts/plot_hic.py) ──────────────────────────
+# Not part of the tutorial, which stops at Juicebox. Draws from the text files
+# the steps above already wrote; `chrom` must be listed in matrices.chroms_for_dump
+# and compartments.chroms. The zoom window shows TADs and loops on the contact map
+# (hg38 chr1 has a large unmappable block around 121-143 Mb: avoid it).
+plots:
+  chrom: "chr1"
+  zoom_start: 60000000
+  zoom_end: 90000000
+
 # ── Container strategy ──────────────────────────────────────────────
 # Set use_singularity: true to run every rule inside its Apptainer SIF.
 # Set use_conda: true to use the micromamba YAML files directly.

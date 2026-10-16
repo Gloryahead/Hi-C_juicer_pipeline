@@ -18,7 +18,10 @@ dependencies:
   - fastqc=0.12.*
   - trim-galore=0.6.*
   - multiqc=1.22.*
-  - gawk                        # juicer.sh's internal scripts are gawk-specific (not POSIX awk) — required, not optional
+  - matplotlib-base             # workflow/scripts/plot_hic.py (publication figures)
+  - numpy
+  - pandas
+  - gawk                       # juicer.sh's internal scripts are gawk-specific (not POSIX awk) — required, not optional
   - parallel=20240722            # GNU parallel — juicer.sh's chunked alignment stage
   - htslib                       # tabix/bgzip, used by a few juicer helper scripts — left unpinned: samtools=1.23 requires htslib>=1.23, which conflicted with an earlier =1.20 pin here (copy-pasted from the sibling WGS env without checking); htslib's exact version isn't load-bearing for Hi-C outputs the way bwa/samtools/juicer's are
   - git                          # scripts/02_setup_juicer.sh clones aidenlab/juicer at build time

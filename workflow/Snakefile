@@ -70,6 +70,7 @@ wildcard_constraints:
 include: "rules/01_qc_trim.smk"
 include: "rules/02_juicer_core.smk"
 include: "rules/03_downstream_analysis.smk"
+include: "rules/04_plots.smk"
 
 # ── Master target rule ────────────────────────────────────────────────
 rule all:
@@ -94,3 +95,7 @@ rule all:
         (expand(f"{config['outdir']}/{{sample}}/aligned/loops/postprocessed_pixels_{config['loops']['resolutions'][0]}.bedpe",
                 sample=ALL_SAMPLES)
          if config["loops"]["run"] else []),
+        # Publication-style figures (PNG + PDF) for the plotted chromosome
+        expand(f"{config['outdir']}/{{sample}}/plots/{{name}}.{{ext}}", sample=ALL_SAMPLES,
+               name=["fig1_contact_maps", "fig2_compartments", "fig3_tads_loops"],
+               ext=["png", "pdf"]),

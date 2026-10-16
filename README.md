@@ -167,9 +167,22 @@ All paths below are relative to `config.yaml`'s `outdir`:
 | `{sample}/aligned/inter_30.hic` | primary contact map |
 | `{sample}/aligned/tads_genome_wide/25000_blocks.bedpe` | TAD annotations |
 | `{sample}/aligned/loops/postprocessed_pixels_5000.bedpe` | loop annotations (if `loops.run: true`) |
-| `{sample}/aligned/compartments/{chrom}_eigenvector_100000.txt` | compartment track |
+| `{sample}/aligned/compartments/{chrom}_eigenvector_250000.txt` | compartment track |
 
 Start at 1MB resolution → zoom to 100kb (compartments) → 25kb (TAD/loop detail).
+
+### Step 8 — Figures (automated, not in the tutorial)
+
+The `plot_figures` rule (`workflow/rules/04_plots.smk`, `workflow/scripts/plot_hic.py`)
+draws three figures per sample into `{outdir}/{sample}/plots/`, each as PNG
+(600 dpi) and PDF (vector text, Okabe-Ito colours): `fig1_contact_maps`
+(whole-chromosome map plus a zoom with TADs and loops), `fig2_compartments`
+(eigenvector above the Pearson matrix), `fig3_tads_loops` (size and count
+summaries). Set the chromosome and zoom window under `plots:` in `config.yaml`.
+It needs `matplotlib-base`, `numpy` and `pandas` in `hic_juicer_env`.
+
+The eigenvector's sign is arbitrary, so the figure labels it PC1, not A/B:
+orient it with gene density or a histone-mark track before calling A and B.
 
 ---
 
