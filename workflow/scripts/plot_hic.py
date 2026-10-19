@@ -59,7 +59,7 @@ def save(fig, outdir, name):
 
 
 def panel_label(ax, letter):
-    ax.text(-0.02, 1.04, letter, transform=ax.transAxes, fontsize=10,
+    ax.text(-0.14, 1.04, letter, transform=ax.transAxes, fontsize=10,
             fontweight="bold", va="bottom", ha="right")
 
 
@@ -110,7 +110,9 @@ def chrom_key(name):
 
 def contact_scale(mat):
     logv = np.log10(mat[np.isfinite(mat)])
-    return np.percentile(logv, 2), np.percentile(logv, 99.5)
+    # Cap the colour scale below the diagonal's saturation so off-diagonal
+    # structure (domains, plaid) stays visible.
+    return np.percentile(logv, 5), np.percentile(logv, 97)
 
 
 def fig_contact_maps(mat, res, chrom, tads, loops, zoom, sample, outdir):
@@ -188,14 +190,17 @@ def fig_compartments(pearsons, p_res, eig, e_res, chrom, sample, outdir):
     panel_label(ax_t, "a")
 
     ax = fig.add_subplot(gs[1, 0])
-    im = ax.imshow(pearsons, cmap="RdBu_r", vmin=-1, vmax=1,
+    # Off-diagonal correlations are small; scale to their 98th percentile
+    # (symmetric about 0) so the plaid pattern is visible. The diagonal clips.
+    lim = float(np.nanpercentile(np.abs(pearsons), 98))
+    im = ax.imshow(pearsons, cmap="RdBu_r", vmin=-lim, vmax=lim,
                    extent=[0, mb, mb, 0], interpolation="nearest")
     ax.set_xlabel(f"{chrom} position (Mb)")
     ax.set_ylabel(f"{chrom} position (Mb)")
     panel_label(ax, "b")
     cax = fig.add_subplot(gs[1, 1])
     cb = fig.colorbar(im, cax=cax)
-    cb.set_label(f"Pearson correlation ({p_res // 1000} kb bins)")
+    cb.set_label(f"Pearson correlation ({p_res // 1000} kb bins; clipped at ±{lim:.2f})")
     cb.outline.set_linewidth(0.4)
     save(fig, outdir, "fig2_compartments")
 

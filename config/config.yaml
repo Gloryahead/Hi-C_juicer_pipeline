@@ -136,7 +136,7 @@ loops:
 plots:
   chrom: "chr1"
   zoom_start: 60000000
-  zoom_end: 90000000
+  zoom_end: 70000000
 
 # ── Container strategy ──────────────────────────────────────────────
 # Set use_singularity: true to run every rule inside its Apptainer SIF.

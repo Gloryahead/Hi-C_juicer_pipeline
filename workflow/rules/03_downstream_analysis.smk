@@ -64,7 +64,9 @@ rule tad_qc_summary:
         tad_max = config["qc_benchmarks"]["tad_count_max"],
     shell:
         """
-        n=$(tail -n +2 {input.bedpe} | wc -l)
+        # Arrowhead writes two '#' header lines ("#chr1 x1 ..." and
+        # "# juicer_tools version ..."); count only data rows.
+        n=$(grep -v '^#' {input.bedpe} | wc -l)
         status="PASS"
         if [ "$n" -lt {params.tad_min} ] || [ "$n" -gt {params.tad_max} ]; then
           status="WARN (outside {params.tad_min}-{params.tad_max} expected range)"

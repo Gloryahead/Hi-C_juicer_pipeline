@@ -15,7 +15,10 @@ rule plot_figures:
         pearson = f"{OUTDIR}/{{sample}}/aligned/compartments/{_PCHR}_pearsons_{config['compartments']['resolution']}.txt",
         eigen   = f"{OUTDIR}/{{sample}}/aligned/compartments/{_PCHR}_eigenvector_{config['compartments']['eigenvector_resolution']}.txt",
         tads    = f"{OUTDIR}/{{sample}}/aligned/tads_genome_wide/{config['tads']['resolution']}_blocks.bedpe",
-        loops   = (f"{OUTDIR}/{{sample}}/aligned/loops/postprocessed_pixels_{config['loops']['resolutions'][0]}.bedpe"
+        # merged_loops.bedpe combines every HiCCUPS resolution (5 kb + 10 kb);
+        # hiccups_loops only declares the first resolution's file, but this one
+        # is written by the same run.
+        loops   = (f"{OUTDIR}/{{sample}}/aligned/loops/merged_loops.bedpe"
                    if config["loops"]["run"] else []),
     output:
         expand(f"{OUTDIR}/{{{{sample}}}}/plots/{{name}}.{{ext}}", name=_PNAMES, ext=["png", "pdf"]),
