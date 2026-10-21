@@ -175,8 +175,8 @@ Start at 1MB resolution → zoom to 100kb (compartments) → 25kb (TAD/loop deta
 
 The `plot_figures` rule (`workflow/rules/04_plots.smk`, `workflow/scripts/plot_hic.py`)
 draws three figures per sample into `{outdir}/{sample}/plots/`, each as PNG
-(600 dpi) and PDF (vector text, Okabe-Ito colours): `fig1_contact_maps`
-(whole-chromosome map plus a zoom with TADs and loops), `fig2_compartments`
+(300 dpi) and PDF (vector text, Okabe-Ito colours): `fig1_contact_maps`
+(whole-chromosome map plus a 5 kb zoom, in the style of the tutorial's Juicebox screenshot), `fig2_compartments`
 (eigenvector above the Pearson matrix), `fig3_tads_loops` (size and count
 summaries). Set the chromosome and zoom window under `plots:` in `config.yaml`.
 It needs `matplotlib-base`, `numpy` and `pandas` in `hic_juicer_env`.

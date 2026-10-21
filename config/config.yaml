@@ -135,8 +135,10 @@ loops:
 # (hg38 chr1 has a large unmappable block around 121-143 Mb: avoid it).
 plots:
   chrom: "chr1"
-  zoom_start: 60000000
-  zoom_end: 70000000
+  # 92-95 Mb at 5 kb is the window shown in the tutorial's Juicebox screenshot.
+  zoom_start: 92000000
+  zoom_end: 95000000
+  zoom_res: 5000
 
 # ── Container strategy ──────────────────────────────────────────────
 # Set use_singularity: true to run every rule inside its Apptainer SIF.
