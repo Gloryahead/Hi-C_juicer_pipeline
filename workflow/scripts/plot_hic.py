@@ -30,7 +30,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, PowerNorm
 from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Rectangle
 
@@ -137,7 +137,7 @@ def domain_track(ax, tads, chrom, start, end):
     sel = tads[(tads["chr1"] == chrom) & (tads["x2"] >= start) & (tads["x1"] <= end)]
     for _, r in sel.iterrows():
         ax.add_patch(Rectangle((max(r.x1, start) / 1e6, 0), (min(r.x2, end) - max(r.x1, start)) / 1e6,
-                               1, facecolor=GREEN, edgecolor="white", linewidth=0.3))
+                               1, facecolor=GREEN, edgecolor="none", linewidth=0))
     ax.set_xlim(start / 1e6, end / 1e6)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -158,7 +158,7 @@ def fig_contact_maps(mat, res, zmat, zres, eig, e_res, chrom, tads, loops, zoom,
     b) the zoom window at fine resolution with a TAD track and loop squares."""
     fig = plt.figure(figsize=(WIDTH, 3.9))
     gs = GridSpec(3, 2, figure=fig, height_ratios=[0.35, 0.35, 10], hspace=0.04,
-                  wspace=0.22)
+                  wspace=0.6)
 
     # a) whole chromosome at ~500 kb, linear colour scale capped at the 95th percentile
     factor = max(1, 500000 // res)
@@ -169,7 +169,8 @@ def fig_contact_maps(mat, res, zmat, zres, eig, e_res, chrom, tads, loops, zoom,
     ax_e = fig.add_subplot(gs[1, 0])
     eigen_track(ax_e, eig, e_res, mb)
     ax = fig.add_subplot(gs[2, 0])
-    im = ax.imshow(coarse, cmap=WHITE_RED, vmin=0, vmax=cap(coarse, 95),
+    # floor at the 5th percentile so the off-diagonal background is white
+    im = ax.imshow(coarse, cmap=WHITE_RED, vmin=cap(coarse, 5), vmax=cap(coarse, 99),
                    extent=[0, mb, mb, 0], interpolation="nearest")
     ax.set_xlabel(f"{chrom} position (Mb)")
     ax.set_ylabel(f"{chrom} position (Mb)")
@@ -187,7 +188,10 @@ def fig_contact_maps(mat, res, zmat, zres, eig, e_res, chrom, tads, loops, zoom,
     n_tad = domain_track(ax_t, tads, chrom, zs, ze)
     fig.add_subplot(gs[1, 1]).axis("off")
     ax = fig.add_subplot(gs[2, 1])
-    im = ax.imshow(zmat, cmap=WHITE_RED, vmin=0, vmax=cap(zmat, 98),
+    # 5 kb bins are sparse at this depth: a square-root colour scale capped at
+    # the 90th percentile keeps the diagonal from hiding the domains.
+    im = ax.imshow(zmat, cmap=WHITE_RED,
+                   norm=PowerNorm(gamma=0.5, vmin=0, vmax=cap(zmat, 90)),
                    extent=[zs / 1e6, ze / 1e6, ze / 1e6, zs / 1e6],
                    interpolation="nearest")
     n_loop = 0
