@@ -125,7 +125,11 @@ def coarsen(mat, factor):
     blocks = mat[:n, :n].reshape(n // factor, factor, n // factor, factor)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        return np.nanmean(blocks, axis=(1, 3))
+        out = np.nanmean(blocks, axis=(1, 3))
+    # Blocks with few measured bins (the flanks of the centromere gap) have
+    # inflated normalized values; show them as missing instead.
+    out[np.isfinite(blocks).sum(axis=(1, 3)) < 0.25 * factor * factor] = np.nan
+    return out
 
 
 def cap(values, pct):
@@ -169,8 +173,10 @@ def fig_contact_maps(mat, res, zmat, zres, eig, e_res, chrom, tads, loops, zoom,
     ax_e = fig.add_subplot(gs[1, 0])
     eigen_track(ax_e, eig, e_res, mb)
     ax = fig.add_subplot(gs[2, 0])
-    # floor at the 5th percentile so the off-diagonal background is white
-    im = ax.imshow(coarse, cmap=WHITE_RED, vmin=cap(coarse, 5), vmax=cap(coarse, 99),
+    # floor at the 5th percentile so the off-diagonal background is white;
+    # square-root scale so the diagonal does not hide the plaid pattern
+    im = ax.imshow(coarse, cmap=WHITE_RED,
+                   norm=PowerNorm(gamma=0.5, vmin=cap(coarse, 5), vmax=cap(coarse, 98)),
                    extent=[0, mb, mb, 0], interpolation="nearest")
     ax.set_xlabel(f"{chrom} position (Mb)")
     ax.set_ylabel(f"{chrom} position (Mb)")
