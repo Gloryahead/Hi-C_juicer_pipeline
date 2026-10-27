@@ -50,6 +50,9 @@ rule dump_zoom:
 
 rule plot_figures:
     input:
+        # Snakemake does not track the contents of a script called from a
+        # shell block; listing it here reruns the plots whenever it changes.
+        script  = "workflow/scripts/plot_hic.py",
         zoom    = rules.dump_zoom.output,
         matrix  =f"{OUTDIR}/{{sample}}/aligned/matrices/{_PCHR}_contacts_{config['matrices']['dump_resolution']}.txt",
         pearson = f"{OUTDIR}/{{sample}}/aligned/compartments/{_PCHR}_pearsons_{config['compartments']['resolution']}.txt",
